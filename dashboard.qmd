@@ -1,7 +1,9 @@
 ---
 title: "Precificação de Imóveis"
 author: "Saulo Morellato"
-format: dashboard
+format:
+  dashboard:
+    theme: sandstone
 server: shiny
 ---
 
@@ -12,33 +14,81 @@ server: shiny
 ## PACOTES ##
 
 library(tidyverse)  # manipulacao dos dados
-library(MASS)       # stepwise (aic)
+library(plotly)     # graficos iterativos
 
 
 ## CARREGANDO OS DADOS ##
 
-dados <- read.table("imoveis.txt") %>% 
+dados <- read.table("imoveis.txt", header=TRUE) %>% 
   data.frame()
 ```
 
 
 
-
-
+# Dados
 
 ```{r}
-sliderInput("bins", "Number of bins:", 
-            min = 1, max = 50, value = 30)
-plotOutput("distPlot")
+tableOutput("tabela")
+```
+
+
+
+# Gráficos
+
+## {.sidebar}
+
+```{r}
+selectInput("x",                                    # nome da variavel
+            "Selecione uma variável",               # inscricao sobre o seletor
+            names(dados)[-5]                        # lista de nomes
+)
 ```
 
 ```{r}
 #| context: server
-output$distPlot <- renderPlot({
-   x <- faithful[, 2]  # Old Faithful Geyser data
-   bins <- seq(min(x), max(x), length.out = input$bins + 1)
-   hist(x, breaks = bins, col = 'darkgray', border = 'white',
-        xlab = 'Waiting time to next eruption (in mins)',
-        main = 'Histogram of waiting times')
+
+#dataset <- reactive({
+#  comandos para customizar os dados
+#})
+
+output$diag_dispersao <- renderPlot({
+  
+  #dataset() %>% ggplot() se os dados fossem manipulados
+  
+  p <- dados %>% ggplot(aes_string(x=input$x)) + 
+    geom_point(aes(y=preco), size=2) + 
+    ylab("Preço do Imóvel") +
+    theme_bw()
+  
+  if(input$x=="imposto"){p<-p+xlab("Imposto pago pelo imóvel")}
+  if(input$x=="areat"){p<-p+xlab("Área do terreno")}
+  if(input$x=="areac"){p<-p+xlab("Área construída")}
+  if(input$x=="idade"){p<-p+xlab("Idade do imóvel")}
+  
+  #ggplotly(p)
+  p
+
 })
+
+
+
+output$tabela<- renderTable({
+  dados
+},align="c")
+
+
 ```
+
+
+## Column
+
+```{r}
+#plotlyOutput("diag_dispersao")
+plotOutput("diag_dispersao")
+```
+
+
+
+
+# Predição
+
